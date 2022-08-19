@@ -8,6 +8,10 @@ terraform {
 }
 
 provider "azurerm" {
+  subscription_id = var.azure_subscription_description["subscription_id"]
+  client_id       = var.azure_subscription_description["client_id"]
+  client_secret   = var.azure_subscription_description["client_secret"]
+  tenant_id       = var.azure_subscription_description["tenant_id"]
   features {}
 }
 
@@ -117,6 +121,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "scale_set" {
   instances           = 2
   admin_password      = "Azure@123"
   admin_username      = "vmuser"
+  zones = ["1", "2"]
   upgrade_mode = "Automatic"
   source_image_reference {
     publisher = "MicrosoftWindowsServer"
@@ -149,8 +154,8 @@ resource "azurerm_windows_virtual_machine_scale_set" "scale_set" {
 // We want to ensure that we have a web server running on the 
 // machines that are part of the backend pool
 
-resource "azurerm_storage_account" "appstore" {
-  name                     = "csb100320021de0ac5c"
+resource "azurerm_storage_account" "appstorage" {
+  name                     = "appstorage"
   resource_group_name      = azurerm_resource_group.app_grp.name
   location                 = azurerm_resource_group.app_grp.location
   account_tier             = "Standard"
@@ -160,10 +165,10 @@ resource "azurerm_storage_account" "appstore" {
 
 resource "azurerm_storage_container" "data" {
   name                  = "data"
-  storage_account_name  = "csb100320021de0ac5c"
+  storage_account_name  = "appstorage228"
   container_access_type = "blob"
   depends_on=[
-    azurerm_storage_account.appstore
+    azurerm_storage_account.appstorage
     ]
 }
 
@@ -192,7 +197,7 @@ resource "azurerm_virtual_machine_scale_set_extension" "scaleset_extension" {
   ]
   settings = <<SETTINGS
     {
-        "fileUris": ["https://${azurerm_storage_account.appstore.name}.blob.core.windows.net/data/cfg.ps1"],
+        "fileUris": ["https://${azurerm_storage_account.appstorage.name}.blob.core.windows.net/data/cfg.ps1"],
           "commandToExecute": "powershell -ExecutionPolicy Unrestricted -file cfg.ps1"     
     }
 SETTINGS
