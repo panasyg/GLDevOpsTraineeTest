@@ -3,7 +3,10 @@
 Hi!
 
 Our task consists of two scenarios 
+
 Let me tell what I've done in the first one:  
+
+1.
 the goal was to deploy infrastructure as showed below
 ![image](https://user-images.githubusercontent.com/91308486/186751061-ac6b6023-74c5-439f-ba75-0dca5a5dcbb9.png)
 Firstly, authenticating using a Service Principal with a Client Secret in the Cloud Shell.
@@ -18,5 +21,13 @@ Described this providers:
   - load balancer
   - lb probe (TCP/80)
   - lb rule (TCP/80)
-  - VMs(2019-Datacenter) x 2
+  - VMs(2019-Datacenter) x 2 in different AZs
+ 
+![image(1)](https://user-images.githubusercontent.com/91308486/186754658-3b7aa20b-d35c-446c-8bf2-228a661395ba.jpg)
+
+here we goo)
+moving to the next step:
+
+2.
+
   
