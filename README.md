@@ -31,5 +31,6 @@ here we goo)
 moving to the next step:
 
 2.
+connecting to VMs via azure bastion and exexute folowing script to setup the certificate for HTTPS communication with SSL and configure WinRM
 
   
