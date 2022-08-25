@@ -8,7 +8,9 @@ Let me tell what I've done in the first one:
 
 1.
 the goal was to deploy infrastructure as showed below
+
 ![image](https://user-images.githubusercontent.com/91308486/186751061-ac6b6023-74c5-439f-ba75-0dca5a5dcbb9.png)
+
 Firstly, authenticating using a Service Principal with a Client Secret in the Cloud Shell.
 Described this providers:
   - resource group
