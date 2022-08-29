@@ -34,8 +34,11 @@ moving to the next step:
 2.
 connecting to VMs via azure bastion and exexute folowing script to setup WinRM
 
+
 winrm quickconfig 
+
 netsh advfirewall firewall add rule name=”WinRM-HTTP” dir=in localport=5985 protocol=TCP action=allow
+
 
 next starting our script "script.ps1", which connects to VMs via WinRM and deploys are IIS, cleans our website/appPool
 
