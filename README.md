@@ -24,7 +24,7 @@ Described this providers:
   - lb probe (TCP/80)
   - lb rule (TCP/80)
   - VMs(2019-Datacenter) x 2 in different AZs
-  - DNS zone
+  - DNS zone  
  
 ![image(1)](https://user-images.githubusercontent.com/91308486/186754658-3b7aa20b-d35c-446c-8bf2-228a661395ba.jpg)
 
