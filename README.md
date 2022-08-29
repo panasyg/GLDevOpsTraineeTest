@@ -47,6 +47,12 @@ Our website:
 ![image](https://user-images.githubusercontent.com/91308486/187294627-d554f8cc-4420-4153-893d-c7a91357b257.png)
 
  Going to Default.html, created by the script, and opening one more window to be make sure LB is working properly:
+ 
+ ![image](https://user-images.githubusercontent.com/91308486/187314788-058c250e-2ce1-4c05-bb76-b65092516eca.png)
+ 
+ the same link, different IPs
+ 
+ That`s all, thanks for paying attention)
 
 
   
