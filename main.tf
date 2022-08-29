@@ -15,36 +15,24 @@ provider "azurerm" {
   features {}
 }
 
-
-locals {
-  resource_group="app-grp"
-  location="North Europe"  
+resource "azurerm_resource_group" "app"{
+  name="app"
+  location="West US 3"
 }
-
-
-resource "azurerm_resource_group" "app_grp"{
-  name=local.resource_group
-  location=local.location
-}
-
-// First we create a virtual network to hold the machines that 
-// are going to be part of the virtual machine scale set
 
 resource "azurerm_virtual_network" "app_network" {
   name                = "app-network"
-  location            = local.location
-  resource_group_name = azurerm_resource_group.app_grp.name
+  location            = azurerm_resource_group.app.location
+  resource_group_name = azurerm_resource_group.app.name
   address_space       = ["10.0.0.0/16"]  
   depends_on = [
-    azurerm_resource_group.app_grp
+    azurerm_resource_group.app
   ]
 }
 
-// The virtual network will have the following subnet
-
 resource "azurerm_subnet" "SubnetA" {
   name                 = "SubnetA"
-  resource_group_name  = azurerm_resource_group.app_grp.name
+  resource_group_name  = azurerm_resource_group.app.name
   virtual_network_name = azurerm_virtual_network.app_network.name
   address_prefixes     = ["10.0.1.0/24"]
   depends_on = [
@@ -52,22 +40,53 @@ resource "azurerm_subnet" "SubnetA" {
   ]
 }
 
-// The public IP address is going to be assigned to the load balancer
 resource "azurerm_public_ip" "load_ip" {
   name                = "load-ip"
-  location            = azurerm_resource_group.app_grp.location
-  resource_group_name = azurerm_resource_group.app_grp.name
+  location            = azurerm_resource_group.app.location
+  resource_group_name = azurerm_resource_group.app.name
   allocation_method   = "Static"
+  domain_name_label = "devopstestiissite"
   sku="Standard"
 }
 
-// Here we are creating the Azure Load Balancer
-// This will be sitting in front of the Load Balancer
+resource "azurerm_public_ip" "test" {
+  count = 2
+  name                = "publicIPforVM${count.index}"
+  location            = azurerm_resource_group.app.location
+  resource_group_name = azurerm_resource_group.app.name
+  domain_name_label = "test09890vm${count.index}"
+  allocation_method   = "Static"
+  sku="Standard"
+  zones = [count.index + 1]
+}
+
+resource "azurerm_dns_zone" "example" {
+  name                = "westus3.cloudapp.azure.com"
+  resource_group_name = azurerm_resource_group.app.name
+}
+
+resource "azurerm_dns_a_record" "example" {
+  count = 2
+  name                = "dnsforvm${count.index}"
+  zone_name           = azurerm_dns_zone.example.name
+  resource_group_name = azurerm_resource_group.app.name
+  ttl                 = 300
+target_resource_id  = azurerm_public_ip.test[count.index].id
+}
+
+
+resource "azurerm_dns_a_record" "examplelb" {
+  name                = "dnsforlb"
+  zone_name           = azurerm_dns_zone.example.name
+  resource_group_name = azurerm_resource_group.app.name
+  ttl                 = 300
+target_resource_id  = azurerm_public_ip.load_ip.id
+}
 
 resource "azurerm_lb" "app_balancer" {
   name                = "app-balancer"
-  location            = azurerm_resource_group.app_grp.location
-  resource_group_name = azurerm_resource_group.app_grp.name
+  location            = azurerm_resource_group.app.location
+  resource_group_name = azurerm_resource_group.app.name
   sku="Standard"
   sku_tier = "Regional"
   frontend_ip_configuration {
@@ -80,18 +99,16 @@ resource "azurerm_lb" "app_balancer" {
   ]
 }
 
-// Here we are defining the backend pool
-resource "azurerm_lb_backend_address_pool" "scalesetpool" {
+resource "azurerm_lb_backend_address_pool" "vmpool" {
   loadbalancer_id = azurerm_lb.app_balancer.id
-  name            = "scalesetpool"
+  name            = "vmspool"
   depends_on=[
     azurerm_lb.app_balancer
   ]
 }
 
-// Here we are defining the Health Probe
 resource "azurerm_lb_probe" "ProbeA" {
-  resource_group_name = azurerm_resource_group.app_grp.name
+  resource_group_name = azurerm_resource_group.app.name
   loadbalancer_id     = azurerm_lb.app_balancer.id
   name                = "probeA"
   port                = 80
@@ -101,115 +118,77 @@ resource "azurerm_lb_probe" "ProbeA" {
   ]
 }
 
-// Here we are defining the Load Balancing Rule
 resource "azurerm_lb_rule" "RuleA" {
-  resource_group_name            = azurerm_resource_group.app_grp.name
+  resource_group_name            = azurerm_resource_group.app.name
   loadbalancer_id                = azurerm_lb.app_balancer.id
   name                           = "RuleA"
   protocol                       = "Tcp"
   frontend_port                  = 80
   backend_port                   = 80
   frontend_ip_configuration_name = "frontend-ip"
-  backend_address_pool_ids = [ azurerm_lb_backend_address_pool.scalesetpool.id ]
+  backend_address_pool_ids = [ azurerm_lb_backend_address_pool.vmpool.id ]
 }
 
-resource "azurerm_windows_virtual_machine_scale_set" "scale_set" {
-  name                = "scale-set"
-  resource_group_name = azurerm_resource_group.app_grp.name
-  location            = azurerm_resource_group.app_grp.location
-  sku                 = "Standard_D2s_v3"
-  instances           = 2
-  admin_password      = "Azure@123"
-  admin_username      = "vmuser"
-  zones = ["1", "2"]
-  upgrade_mode = "Automatic"
-  source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
-    version   = "latest"
-  }
+resource "azurerm_network_interface" "test" {
+   count               = 2
+   name                = "acctni${count.index}"
+   location            = azurerm_resource_group.app.location
+   resource_group_name = azurerm_resource_group.app.name
+   dns_servers         = ["8.8.8.8","1.1.1.1"]
+   ip_configuration {
+     name                          = "testConfiguration"
+     subnet_id                     = azurerm_subnet.SubnetA.id
+     private_ip_address_allocation = "dynamic"
+     public_ip_address_id = azurerm_public_ip.test[count.index].id
+   }
+ }
 
-  os_disk {
-    storage_account_type = "Standard_LRS"
-    caching              = "ReadWrite"
-  }
-
-  network_interface {
-    name    = "scaleset-interface"
-    primary = true
-
-    ip_configuration {
-      name      = "internal"
-      primary   = true
-      subnet_id = azurerm_subnet.SubnetA.id
-      load_balancer_backend_address_pool_ids =[azurerm_lb_backend_address_pool.scalesetpool.id]
-    }    
-  }
-  depends_on=[
-      azurerm_virtual_network.app_network
-    ]
+resource "azurerm_network_interface_backend_address_pool_association" "example" {
+  count = 2
+  network_interface_id    = azurerm_network_interface.test[count.index].id
+  ip_configuration_name   = "testConfiguration"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.vmpool.id
 }
 
-// We want to ensure that we have a web server running on the 
-// machines that are part of the backend pool
+resource "azurerm_virtual_machine" "test" {
+   count                 = 2
+   name                  = "acctvm${count.index}"
+   location              = azurerm_resource_group.app.location
+   resource_group_name   = azurerm_resource_group.app.name
+   network_interface_ids = [element(azurerm_network_interface.test.*.id, count.index)]
+   vm_size               = "Standard_DS1_v2"
+   zones = [count.index + 1]
 
-resource "azurerm_storage_account" "appstorage" {
-  name                     = "appstorage"
-  resource_group_name      = azurerm_resource_group.app_grp.name
-  location                 = azurerm_resource_group.app_grp.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  allow_blob_public_access = true
+   storage_image_reference {
+     publisher = "MicrosoftWindowsServer"
+     offer     = "WindowsServer"
+     sku       = "2019-Datacenter"
+     version   = "latest"
+   }
+
+   storage_os_disk {
+     name              = "myoosdisk${count.index}"
+     caching           = "ReadWrite"
+     create_option     = "FromImage"
+     managed_disk_type = "Standard_LRS"
+   }
+
+   os_profile {
+     computer_name  = var.user["computer_name"]
+     admin_username = var.user["admin_username"]
+     admin_password = var.user["admin_password"]
+   }
+
+   os_profile_windows_config { 
+    provision_vm_agent = true
 }
-
-resource "azurerm_storage_container" "data" {
-  name                  = "data"
-  storage_account_name  = "appstorage228"
-  container_access_type = "blob"
-  depends_on=[
-    azurerm_storage_account.appstorage
-    ]
-}
-
-# Here we are uploading our IIS Configuration script as a blob
-# to the Azure storage account
-
-resource "azurerm_storage_blob" "IIS_config" {
-  name                   = "cfg.ps1"
-  storage_account_name   = "csb100320021de0ac5c"
-  storage_container_name = "data"
-  type                   = "Block"
-  source                 = "cfg.ps1"
-   depends_on=[azurerm_storage_container.data]
-}
-
-// Here we are applying the custom script extension on the 
-// virtual machine scale set
-resource "azurerm_virtual_machine_scale_set_extension" "scaleset_extension" {
-  name                 = "scaleset-extension"
-  virtual_machine_scale_set_id   = azurerm_windows_virtual_machine_scale_set.scale_set.id
-  publisher            = "Microsoft.Compute"
-  type                 = "CustomScriptExtension"
-  type_handler_version = "1.9"
-  depends_on = [
-    azurerm_storage_blob.IIS_config
-  ]
-  settings = <<SETTINGS
-    {
-        "fileUris": ["https://${azurerm_storage_account.appstorage.name}.blob.core.windows.net/data/cfg.ps1"],
-          "commandToExecute": "powershell -ExecutionPolicy Unrestricted -file cfg.ps1"     
-    }
-SETTINGS
-}
-
+ }
 
 resource "azurerm_network_security_group" "app_nsg" {
   name                = "app-nsg"
-  location            = local.location
-  resource_group_name = local.resource_group
+  location            = azurerm_resource_group.app.location
+  resource_group_name = azurerm_resource_group.app.name
 
-# We are creating a rule to allow traffic on port 80
   security_rule {
     name                       = "Allow_HTTP"
     priority                   = 200
