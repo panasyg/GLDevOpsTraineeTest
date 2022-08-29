@@ -24,6 +24,7 @@ Described this providers:
   - lb probe (TCP/80)
   - lb rule (TCP/80)
   - VMs(2019-Datacenter) x 2 in different AZs
+  - DNS zone
  
 ![image(1)](https://user-images.githubusercontent.com/91308486/186754658-3b7aa20b-d35c-446c-8bf2-228a661395ba.jpg)
 
@@ -31,6 +32,14 @@ here we goo)
 moving to the next step:
 
 2.
-connecting to VMs via azure bastion and exexute folowing script to setup the certificate for HTTPS communication with SSL and configure WinRM
+connecting to VMs via azure bastion and exexute folowing script to setup WinRM
+
+winrm quickconfig 
+netsh advfirewall firewall add rule name=”WinRM-HTTP” dir=in localport=5985 protocol=TCP action=allow
+
+next starting our script "script.ps1", which connects to VMs via WinRM and deploys are IIS, cleans our website/appPool
+
+Our website:
+
 
   
