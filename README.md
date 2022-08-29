@@ -32,7 +32,7 @@ here we goo)
 moving to the next step:
 
 2.
-connecting to VMs via azure bastion and exexute folowing script to setup WinRM
+ - connecting to VMs via azure bastion and exexute folowing script to setup WinRM
 
 
 winrm quickconfig 
@@ -40,9 +40,13 @@ winrm quickconfig
 netsh advfirewall firewall add rule name=”WinRM-HTTP” dir=in localport=5985 protocol=TCP action=allow
 
 
-next starting our script "script.ps1", which connects to VMs via WinRM and deploys are IIS, cleans our website/appPool
+ - next starting our script "script.ps1", which connects to VMs via WinRM and deploys are IIS, cleans our website/appPool
 
 Our website:
+
+![image](https://user-images.githubusercontent.com/91308486/187294627-d554f8cc-4420-4153-893d-c7a91357b257.png)
+
+ Going to Default.html, created by the script, and opening one more window to be make sure LB is working properly:
 
 
   
