@@ -1,6 +1,6 @@
-$username = ‘johnny‘
+$username = 'johnny'
 
-$password = ‘Password1234!‘
+$password = 'Password1234!'
 
 $pso = New-PSSessionOption -SkipCACheck
 
@@ -8,7 +8,7 @@ $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force
 
 $credentials = New-Object System.Management.Automation.PSCredential($username, $secpasswd)
 
-$session = New-PSSession -ComputerName ‘20.168.117.17‘ -UseSSL -SessionOption $pso -Credential $credentials
+$session = New-PSSession -ComputerName '20.168.117.17' -UseSSL -SessionOption $pso -Credential $credentials
 
 $scrtipt = {
 #cleaning up WebSite logs
@@ -39,7 +39,7 @@ Set-Content -Path "C:\inetpub\wwwroot\Default.html" -Value "This is the $ipv4 $(
 
 Invoke-Command -Session $session -ScriptBlock { $scrtipt } 
     
-$session2 = New-PSSession -ComputerName ‘20.168.90.192‘ -UseSSL -SessionOption $pso -Credential $credentials
+$session2 = New-PSSession -ComputerName '20.168.90.192' -UseSSL -SessionOption $pso -Credential $credentials
 
-Invoke-Command -Session $session2 20.168.90.192 -ScriptBlock { $scrtipt } 
+Invoke-Command -Session $session2 -ScriptBlock { $scrtipt } 
    
